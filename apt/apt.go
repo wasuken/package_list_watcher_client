@@ -6,6 +6,7 @@ import (
 )
 
 func GetInfo() {
+	apt.CheckForUpdates()
 	pkgs, err := apt.ListUpgradable()
 	if err != nil {
 		panic(err)
