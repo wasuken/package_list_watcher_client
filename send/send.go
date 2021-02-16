@@ -11,21 +11,22 @@ import (
 type PackageInfo struct {
 	Name    string
 	Version string
+	Date    string
 }
 
 type OldPackageInfo struct {
 	New PackageInfo
-	Old PackageInfo
+	Cur PackageInfo
 }
 
 type SendInfo struct {
 	Packs       []PackageInfo
-	OldPacks    []PackageInfo
+	CurPacks    []PackageInfo
 	Name        string // サーバ名
 	PackManType string // パッケージマネージャの種類(apt|pacman)
 }
 
-func SendSrv(tp string, info SendInfo) {
+func SendSrv(info SendInfo) {
 	name, err := os.Hostname()
 	if err != nil {
 		panic(err)

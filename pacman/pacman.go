@@ -2,22 +2,24 @@ package pacman
 
 import (
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/goulash/pacman"
 	"github.com/goulash/pacman/pkgutil"
-	// "github.com/wasuken/package_list_watcher_client/send"
-	"strings"
+	"github.com/wasuken/package_list_watcher_client/send"
 )
 
-func GetInfo() {
+func GetInfo() (error, send.SendInfo) {
 	allPkgs, err := pacman.ReadAllSyncDatabases()
 	if err != nil {
-		panic(err)
+		return err, send.SendInfo{}
 	}
 	localPkgs, err := pacman.ReadLocalDatabase(func(er error) error {
 		panic(er)
 	})
 	if err != nil {
-		panic(err)
+		return err, send.SendInfo{}
 	}
 	allPkgMap := pkgutil.MapPkg(allPkgs, func(pkg pacman.AnyPackage) string {
 		return pkg.Pkg().PkgName()
@@ -26,20 +28,31 @@ func GetInfo() {
 		return pkg.Pkg().PkgName()
 	})
 
+	name, err := os.Hostname()
+	if err != nil {
+		return err, send.SendInfo{}
+	}
+	pkgInfos := []send.PackageInfo{}
+	latestPkgInfos := []send.PackageInfo{}
 	for k, pkg := range localPkgMap {
-		fmt.Println("# " + pkg.PkgName())
-		fmt.Println("current: " + pkg.Name + " : " + pkg.Version)
-		fmt.Println("		depends: " + strings.Join(pkg.Depends, ","))
-		fmt.Println("		build date: " + pkg.BuildDate.Format("2006-01-02 15:04:05"))
+		pkgInfo := send.PackageInfo{
+			Name:    pkg.PkgName(),
+			Version: pkg.Version,
+			Date:    pkg.BuildDate.Format("2006-01-02 15:04:05")}
+		pkgInfos = append(pkgInfos, pkgInfo)
 		if _, ok := allPkgMap[k]; ok {
-			originPkg := allPkgMap[k]
-			opBuildTimeFmt := originPkg.BuildDate.Format("2006-01-02 15:04:05")
-			fmt.Println("origin: " + originPkg.Name + " : " + originPkg.Version)
-			fmt.Println("		depends: " + strings.Join(originPkg.Depends, ","))
-			fmt.Println("		build date: " + opBuildTimeFmt)
-			if pkg.Older(originPkg) {
-				fmt.Println(pkg.PkgName() + " is old.")
-			}
+			latestPkg := allPkgMap[k]
+			latestPkgInfo := send.PackageInfo{
+				Name:    latestPkg.PkgName(),
+				Version: latestPkg.Version,
+				Date:    latestPkg.BuildDate.Format("2006-01-02 15:04:05")}
+			latestPkgInfos = append(latestPkgInfos, latestPkgInfo)
 		}
+	}
+	return nil, send.SendInfo{
+		Name:        name,
+		PackManType: "pacman",
+		Packs:       latestPkgInfos,
+		CurPacks:    pkgInfos,
 	}
 }
