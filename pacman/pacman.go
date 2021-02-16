@@ -3,48 +3,43 @@ package pacman
 import (
 	"fmt"
 	"github.com/goulash/pacman"
-	"github.com/goulash/pacman/aur"
 	"github.com/goulash/pacman/pkgutil"
+	// "github.com/wasuken/package_list_watcher_client/send"
 	"strings"
 )
 
 func GetInfo() {
-	pkgs, err := pacman.ReadLocalDatabase(func(er error) error {
+	allPkgs, err := pacman.ReadAllSyncDatabases()
+	if err != nil {
+		panic(err)
+	}
+	localPkgs, err := pacman.ReadLocalDatabase(func(er error) error {
 		panic(er)
 	})
 	if err != nil {
 		panic(err)
 	}
-	pkgMap := pkgutil.MapPkg(pkgs, func(pkg pacman.AnyPackage) string {
+	allPkgMap := pkgutil.MapPkg(allPkgs, func(pkg pacman.AnyPackage) string {
 		return pkg.Pkg().PkgName()
 	})
-	pkgs = pkgs[0:10]
-	var originPkgs pacman.Packages
-	for _, pkg := range pkgs {
-		p, err := pacman.Read(pkg.PkgName())
-		p2, err2 := aur.Read(pkg.PkgName())
-		if err != nil && err2 != nil {
-			fmt.Println("package not found: " + pkg.PkgName())
-		} else if err == nil {
-			pkgMap[p.PkgName()] = p
-		} else {
-			pkgMap[p2.PkgName()] = p2.Pkg()
-		}
-	}
-	originPkgMap := pkgutil.MapPkg(originPkgs, func(pkg pacman.AnyPackage) string {
+	localPkgMap := pkgutil.MapPkg(localPkgs[0:20], func(pkg pacman.AnyPackage) string {
 		return pkg.Pkg().PkgName()
 	})
 
-	for k, pkg := range originPkgMap {
+	for k, pkg := range localPkgMap {
+		fmt.Println("# " + pkg.PkgName())
 		fmt.Println("current: " + pkg.Name + " : " + pkg.Version)
 		fmt.Println("		depends: " + strings.Join(pkg.Depends, ","))
 		fmt.Println("		build date: " + pkg.BuildDate.Format("2006-01-02 15:04:05"))
-		if _, ok := pkgMap[k]; ok {
-			originPkg := pkgMap[k]
+		if _, ok := allPkgMap[k]; ok {
+			originPkg := allPkgMap[k]
 			opBuildTimeFmt := originPkg.BuildDate.Format("2006-01-02 15:04:05")
 			fmt.Println("origin: " + originPkg.Name + " : " + originPkg.Version)
 			fmt.Println("		depends: " + strings.Join(originPkg.Depends, ","))
 			fmt.Println("		build date: " + opBuildTimeFmt)
+			if pkg.Older(originPkg) {
+				fmt.Println(pkg.PkgName() + " is old.")
+			}
 		}
 	}
 }
