@@ -11,22 +11,16 @@ import (
 type PackageInfo struct {
 	Name    string
 	Version string
-	Date    string
-}
-
-type OldPackageInfo struct {
-	New PackageInfo
-	Cur PackageInfo
 }
 
 type SendInfo struct {
 	Packs       []PackageInfo
-	CurPacks    []PackageInfo
 	Name        string // サーバ名
 	PackManType string // パッケージマネージャの種類(apt|pacman)
+	Arch        string // サーバのOSのArch
 }
 
-func SendSrv(info SendInfo) {
+func SendSrv(info SendInfo, url string) {
 	name, err := os.Hostname()
 	if err != nil {
 		panic(err)
@@ -39,7 +33,7 @@ func SendSrv(info SendInfo) {
 
 	req, err := http.NewRequest(
 		"POST",
-		"http://127.0.0.1:3000/api/v1/server/"+name,
+		url+name,
 		bytes.NewBuffer(json),
 	)
 	if err != nil {

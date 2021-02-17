@@ -1,9 +1,8 @@
 package pacman
 
 import (
-	"fmt"
 	"os"
-	"strings"
+	"runtime"
 
 	"github.com/goulash/pacman"
 	"github.com/goulash/pacman/pkgutil"
@@ -11,19 +10,12 @@ import (
 )
 
 func GetInfo() (error, send.SendInfo) {
-	allPkgs, err := pacman.ReadAllSyncDatabases()
-	if err != nil {
-		return err, send.SendInfo{}
-	}
 	localPkgs, err := pacman.ReadLocalDatabase(func(er error) error {
 		panic(er)
 	})
 	if err != nil {
 		return err, send.SendInfo{}
 	}
-	allPkgMap := pkgutil.MapPkg(allPkgs, func(pkg pacman.AnyPackage) string {
-		return pkg.Pkg().PkgName()
-	})
 	localPkgMap := pkgutil.MapPkg(localPkgs[0:20], func(pkg pacman.AnyPackage) string {
 		return pkg.Pkg().PkgName()
 	})
@@ -32,27 +24,18 @@ func GetInfo() (error, send.SendInfo) {
 	if err != nil {
 		return err, send.SendInfo{}
 	}
+
 	pkgInfos := []send.PackageInfo{}
-	latestPkgInfos := []send.PackageInfo{}
-	for k, pkg := range localPkgMap {
+	for _, pkg := range localPkgMap {
 		pkgInfo := send.PackageInfo{
 			Name:    pkg.PkgName(),
-			Version: pkg.Version,
-			Date:    pkg.BuildDate.Format("2006-01-02 15:04:05")}
+			Version: pkg.Version}
 		pkgInfos = append(pkgInfos, pkgInfo)
-		if _, ok := allPkgMap[k]; ok {
-			latestPkg := allPkgMap[k]
-			latestPkgInfo := send.PackageInfo{
-				Name:    latestPkg.PkgName(),
-				Version: latestPkg.Version,
-				Date:    latestPkg.BuildDate.Format("2006-01-02 15:04:05")}
-			latestPkgInfos = append(latestPkgInfos, latestPkgInfo)
-		}
 	}
 	return nil, send.SendInfo{
 		Name:        name,
+		Arch:        runtime.GOARCH,
 		PackManType: "pacman",
-		Packs:       latestPkgInfos,
-		CurPacks:    pkgInfos,
+		Packs:       pkgInfos,
 	}
 }
