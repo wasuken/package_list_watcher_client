@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 )
 
 type PackageInfo struct {
-	Name    string
-	Version string
+	Name        string
+	Version     string
+	Description string
 }
 
 type SendInfo struct {
@@ -21,11 +21,6 @@ type SendInfo struct {
 }
 
 func SendSrv(info SendInfo, url string) {
-	name, err := os.Hostname()
-	if err != nil {
-		panic(err)
-	}
-
 	json, err := json.Marshal(info)
 	if err != nil {
 		panic(err)
@@ -33,7 +28,7 @@ func SendSrv(info SendInfo, url string) {
 
 	req, err := http.NewRequest(
 		"POST",
-		url+name,
+		url,
 		bytes.NewBuffer(json),
 	)
 	if err != nil {

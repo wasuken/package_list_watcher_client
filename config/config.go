@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const CONFIG_PATH = ".config/plwc/config.tml"
+const CONFIG_PATH = "~/.config/plwc/config.tml"
 
 func configPath() string {
 	usr, _ := user.Current()

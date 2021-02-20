@@ -16,7 +16,7 @@ func GetInfo() (error, send.SendInfo) {
 	if err != nil {
 		return err, send.SendInfo{}
 	}
-	localPkgMap := pkgutil.MapPkg(localPkgs[0:20], func(pkg pacman.AnyPackage) string {
+	localPkgMap := pkgutil.MapPkg(localPkgs, func(pkg pacman.AnyPackage) string {
 		return pkg.Pkg().PkgName()
 	})
 
@@ -28,8 +28,9 @@ func GetInfo() (error, send.SendInfo) {
 	pkgInfos := []send.PackageInfo{}
 	for _, pkg := range localPkgMap {
 		pkgInfo := send.PackageInfo{
-			Name:    pkg.PkgName(),
-			Version: pkg.Version}
+			Name:        pkg.PkgName(),
+			Version:     pkg.Version,
+			Description: pkg.Description}
 		pkgInfos = append(pkgInfos, pkgInfo)
 	}
 	return nil, send.SendInfo{
